@@ -8,6 +8,13 @@ import pbconfig from "./pbconfig";
 
 const DOMAIN: string = "https://manhwaclub.net";
 
+/** True when a chapter is a RAW release (title or slug ends with / contains raw). */
+function isRawChapter(chapter: Chapter): boolean {
+  const title = chapter.title ?? "";
+  const id = chapter.chapterId ?? "";
+  return /\braw\b/i.test(title) || /-raw$/i.test(id);
+}
+
 class ManhwaClubExtension extends MadaraGeneric {
   constructor() {
     super({
@@ -23,17 +30,8 @@ class ManhwaClubExtension extends MadaraGeneric {
   override async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
     const chapters = await super.getChapters(sourceManga);
 
-    for (const chapter of chapters) {
-      if (chapter.title) {
-        // Normal variant: filter the "RAW" string out of the chapter name
-        chapter.title = chapter.title
-          .replace(/\bRAW\b/gi, "")
-          .replace(/\s{2,}/g, " ")
-          .trim();
-      }
-    }
-
-    return chapters;
+    // Normal / English variant: only non-RAW chapters
+    return chapters.filter((chapter) => !isRawChapter(chapter));
   }
 }
 
