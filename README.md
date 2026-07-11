@@ -1,6 +1,6 @@
 # Madara Extensions
 
-Paperback extensions for sites using the generic Madara theme, maintained by Inkdex.
+Paperback extensions for sites using the generic Madara theme.
 
 Extension repository: https://vikas5914.github.io/madara-extensions-custom/0.9/stable/
 
