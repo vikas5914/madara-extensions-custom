@@ -15,7 +15,7 @@ function isRawChapter(chapter: Chapter): boolean {
   return /\braw\b/i.test(title) || /-raw$/i.test(id);
 }
 
-class ManhwaClubExtension extends MadaraGeneric {
+class ManhwaClubENExtension extends MadaraGeneric {
   constructor() {
     super({
       domain: DOMAIN,
@@ -35,4 +35,4 @@ class ManhwaClubExtension extends MadaraGeneric {
   }
 }
 
-export const ManhwaClub = new ManhwaClubExtension();
+export const ManhwaClubEN = new ManhwaClubENExtension();

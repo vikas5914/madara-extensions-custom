@@ -3,13 +3,15 @@
 
 import { ContentRating } from "@paperback/types";
 
+import { DEVELOPERS } from "../developers";
 import { basePbConfig, customVersion } from "../generic/config";
 
 let pbConfig = basePbConfig;
 
-pbConfig.name = "ManhwaClubRAW";
+pbConfig.name = "ManhwaClub (RAW)";
 pbConfig.description = "Extension that pulls only RAW chapters from manhwaclub.net.";
 pbConfig.version = customVersion({ increasePrerelease: -9 });
 pbConfig.contentRating = ContentRating.ADULT;
+pbConfig.developers = DEVELOPERS;
 
 export default pbConfig;

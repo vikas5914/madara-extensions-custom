@@ -6,8 +6,14 @@ Extension repository: https://vikas5914.github.io/madara-extensions-custom/0.9/s
 
 ## Extensions
 
-- **ManhwaClub** — provides non-RAW chapters from `manhwaclub.net`.
-- **ManhwaClubRAW** — provides RAW chapters from `manhwaclub.net`.
+- **ManhwaClub (EN)** (`ManhwaClubEN`) — provides non-RAW chapters from `manhwaclub.net`.
+- **ManhwaClub (RAW)** (`ManhwaClubRaw`) — provides RAW chapters from `manhwaclub.net`.
+
+The IDs differ from the upstream [Inkdex](https://github.com/inkdex/madara-extensions) `ManhwaClub`, so Paperback does not replace these sources with the upstream one.
+
+## Syncing with upstream
+
+Copy `src/generic/` and `package.json` / `package-lock.json` from upstream. Keep the local change in `convertSlugToPostId` (trailing slash on the manga URL).
 
 ## Development
 

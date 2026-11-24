@@ -3,39 +3,32 @@
 
 import {
   BasicRateLimiter,
+  ContentRating,
+  CookieStorageInterceptor,
+  DiscoverSectionType,
+  Form,
+  PaperbackInterceptor,
+  URL,
   type Chapter,
   type ChapterDetails,
-  type ChapterProviding,
-  type CloudflareBypassRequestProviding,
-  ContentRating,
   type Cookie,
-  CookieStorageInterceptor,
   type DiscoverSection,
   type DiscoverSectionItem,
-  type DiscoverSectionProviding,
-  DiscoverSectionType,
-  type Extension,
-  Form,
-  type MangaProviding,
+  type ExtensionImpl,
   type PagedResults,
-  PaperbackInterceptor,
   type Request,
   type SearchQuery,
   type SearchResultItem,
-  type SearchResultsProviding,
-  type SettingsFormProviding,
+  type SortingOption,
   type SourceManga,
+  type Tag,
   type TagSection,
-  URL,
 } from "@paperback/types";
-import {
-  SearchFilterForm,
-  type SearchFilter,
-  type SearchFilterValue,
-} from "@paperback/types/lib/compat/0.8";
 import * as cheerio from "cheerio";
 
-import { getUsePostIds, MadaraSettings } from "./forms";
+import type { basePbConfig } from "./config";
+import { getUsePostIds, MadaraSearchForm, MadaraSettings } from "./forms";
+import { SORTING_OPTIONS, type MadaraSearchMetadata } from "./models";
 import { MadaraInterceptor } from "./network";
 import { MadaraParser } from "./parsers";
 
@@ -65,16 +58,7 @@ type Metadata = {
   completed?: boolean;
 };
 
-export abstract class MadaraGeneric
-  implements
-    Extension,
-    SearchResultsProviding,
-    MangaProviding,
-    ChapterProviding,
-    DiscoverSectionProviding,
-    SettingsFormProviding,
-    CloudflareBypassRequestProviding
-{
+export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig> {
   /**
    * The Madara URL of the website. Eg. https://webtoon.xyz
    */
@@ -212,7 +196,7 @@ export abstract class MadaraGeneric
   }
 
   async getSettingsForm(): Promise<Form> {
-    return new MadaraSettings(this);
+    return new MadaraSettings(this.name, this.domain);
   }
 
   async getMangaDetails(mangaId: string): Promise<SourceManga> {
@@ -383,7 +367,7 @@ export abstract class MadaraGeneric
     };
   }
 
-  async getSearchFilters(): Promise<SearchFilter[]> {
+  async fetchGenres(): Promise<Tag[]> {
     const [_response, buffer] = await Application.scheduleRequest({
       url: `${this.domain}/?s=&post_type=wp-manga`,
       method: "GET",
@@ -394,35 +378,25 @@ export abstract class MadaraGeneric
     const tagSections = await this.parser.parseSearchTags($);
     const genreTags = tagSections.find((x) => x.id === "genres") as TagSection;
 
-    return [
-      {
-        type: "multiselect",
-        options: genreTags.tags.map((x) => ({
-          id: x.id,
-          value: x.title,
-        })),
-        id: genreTags.id,
-        allowExclusion: false,
-        title: genreTags.title,
-        value: {},
-        allowEmptySelection: true,
-        maximum: undefined,
-      },
-    ];
+    return genreTags.tags;
   }
 
-  async getAdvancedSearchForm(query: SearchQuery<SearchFilterValue[]>) {
-    // TODO: Replace compat wrapper with proper search form implementation
-    return new SearchFilterForm(query.metadata, this.getSearchFilters());
+  async getAdvancedSearchForm(query: SearchQuery<MadaraSearchMetadata>): Promise<MadaraSearchForm> {
+    return new MadaraSearchForm(query.metadata, this.fetchGenres());
+  }
+
+  async getSortingOptions(): Promise<SortingOption[]> {
+    return SORTING_OPTIONS;
   }
 
   async getSearchResults(
-    query: SearchQuery<SearchFilterValue[]>,
+    query: SearchQuery<MadaraSearchMetadata>,
     metadata: Metadata | undefined,
+    sortingOption: SortingOption | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
     const page = metadata?.page ?? 1;
 
-    const [_response, buffer] = await this.constructSearchRequest(page, query);
+    const [_response, buffer] = await this.constructSearchRequest(page, query, sortingOption);
 
     if (_response.status === 404) {
       return { items: [], metadata: undefined }; // Madara doesn't support last page checking, will return 404 on website!
@@ -432,25 +406,15 @@ export abstract class MadaraGeneric
 
     const results = await this.parser.parseSearchResults($, this);
 
-    const items: SearchResultItem[] = [];
-
-    for (const result of results) {
-      if (getUsePostIds(this.usePostIds)) {
-        items.push({
-          mangaId: (await this.getPostAndSlug(result.slug)).postId,
-          imageUrl: result.image,
-          title: result.title,
-          subtitle: result.subtitle,
-        });
-      } else {
-        items.push({
-          mangaId: result.slug,
-          imageUrl: result.image,
-          title: result.title,
-          subtitle: result.subtitle,
-        });
-      }
-    }
+    const usePostIds = getUsePostIds(this.usePostIds);
+    const items: SearchResultItem[] = await Promise.all(
+      results.map(async (result) => ({
+        mangaId: usePostIds ? (await this.getPostAndSlug(result.slug)).postId : result.slug,
+        imageUrl: result.image,
+        title: result.title,
+        subtitle: result.subtitle,
+      })),
+    );
 
     return {
       items: items,
@@ -471,20 +435,26 @@ export abstract class MadaraGeneric
   }
 
   // Utility
-  constructSearchRequest(page: number, query: SearchQuery<SearchFilterValue[]>) {
+  constructSearchRequest(
+    page: number,
+    query: SearchQuery<MadaraSearchMetadata>,
+    sortingOption?: SortingOption,
+  ) {
     const urlBuilder = new URL(this.domain)
       .addPathComponent(this.searchPagePathName)
       .addPathComponent(page.toString())
       .setQueryItem("s", this.sanitizeQuery(query?.title ?? ""))
       .setQueryItem("post_type", "wp-manga");
 
-    const genreFilters = Object.keys(
-      (query.metadata ?? []).find((x) => x.id === "genres")?.value ?? {},
-    );
+    const genreFilters = Object.keys(query.metadata?.genres ?? {});
 
     if (genreFilters.length) {
       genreFilters.forEach((genre, i) => urlBuilder.setQueryItem(`genre[${i}]`, genre));
       urlBuilder.setQueryItem("op", "1");
+    }
+
+    if (sortingOption && sortingOption.id !== "relevance") {
+      urlBuilder.setQueryItem("m_orderby", sortingOption.id);
     }
 
     return Application.scheduleRequest({
@@ -504,19 +474,15 @@ export abstract class MadaraGeneric
     let slug: string = "";
 
     if (!isPostId) {
-      if (getUsePostIds()) {
-        // If provided mangaId is NOT a postId, but a slug AND we care about having the postId
-        const slugInput = mangaId.toString();
+      // mangaId is already the slug
+      slug = mangaId.toString();
 
-        // Fetch postId for slug
-        postId = Application.getState(slugInput) as number;
-
-        // If unable to fetch postId, turn slug into postId
+      // Only resolve the postId when this source actually uses post IDs
+      if (getUsePostIds(this.usePostIds)) {
+        postId = Application.getState(slug) as number;
         if (!postId) {
-          postId = await this.convertSlugToPostId(slugInput);
+          postId = await this.convertSlugToPostId(slug);
         }
-
-        slug = slugInput;
       }
     } else {
       // If mangaId IS a postId
@@ -534,7 +500,7 @@ export abstract class MadaraGeneric
     }
 
     // We only need to store these if we actually care about them
-    if (getUsePostIds()) {
+    if (getUsePostIds(this.usePostIds)) {
       Application.setState(postId.toString(), slug);
       Application.setState(slug, postId.toString());
     }
@@ -580,8 +546,9 @@ export abstract class MadaraGeneric
 
   async convertSlugToPostId(slug: string): Promise<number> {
     // Credit to the MadaraDex team :-D
+    // The trailing slash matters: manhwaclub.net serves a tracker page instead of the manga page without it.
     const [headResponse] = await Application.scheduleRequest({
-      url: `${this.domain}/temp_dirpath/${slug}`,
+      url: `${this.domain}/temp_dirpath/${slug}/`,
       method: "HEAD",
     });
 
@@ -593,7 +560,7 @@ export abstract class MadaraGeneric
 
     // Move on to the alternative method of parsing
     const [, buffer] = await Application.scheduleRequest({
-      url: `${this.domain}/temp_dirpath/${slug}`,
+      url: `${this.domain}/temp_dirpath/${slug}/`,
       method: "GET",
     });
 
