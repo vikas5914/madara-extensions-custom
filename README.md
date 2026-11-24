@@ -13,7 +13,13 @@ The IDs differ from the upstream [Inkdex](https://github.com/inkdex/madara-exten
 
 ## Syncing with upstream
 
-Copy `src/generic/` and `package.json` / `package-lock.json` from upstream. Keep the local change in `convertSlugToPostId` (trailing slash on the manga URL).
+Copy `src/generic/` and `package.json` / `package-lock.json` from upstream, then keep these local changes:
+
+- `src/generic/decode.ts` and every `decodeHtml(...)` call. `manhwaclub.net` injects invalid UTF-8 into every page, and `Application.arrayBufferToUTF8String` gives no string on iOS (`cheerio.load() expects a string`).
+- Canonical URLs (trailing slash, no `/page/1/`). The site serves a tracker page instead of a redirect for non-canonical URLs, including `?p=<id>`.
+- `getPostAndSlug` resolves the post ID when `chapterEndpoint` is 0, so ManhwaClub can use slugs as manga IDs.
+
+`npm test` runs with strict UTF-8 decoding, like iOS.
 
 ## Development
 

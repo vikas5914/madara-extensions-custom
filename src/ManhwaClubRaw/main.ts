@@ -22,7 +22,7 @@ class ManhwaClubRawExtension extends MadaraGeneric {
       name: pbconfig.name,
       contentRating: pbconfig.contentRating,
       language: pbconfig.language,
-      usePostIds: true,
+      usePostIds: false,
       chapterEndpoint: 0,
     });
   }

@@ -27,6 +27,7 @@ import {
 import * as cheerio from "cheerio";
 
 import type { basePbConfig } from "./config";
+import { decodeHtml } from "./decode";
 import { getUsePostIds, MadaraSearchForm, MadaraSettings } from "./forms";
 import { SORTING_OPTIONS, type MadaraSearchMetadata } from "./models";
 import { MadaraInterceptor } from "./network";
@@ -207,7 +208,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
     return this.parser.parseMangaDetails($, mangaId, this);
   }
 
@@ -229,7 +230,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
 
       case 1:
         requestConfig = {
-          url: `${this.domain}/temp_dirpath/${mangaId.slug}/ajax/chapters`,
+          url: `${this.domain}/temp_dirpath/${mangaId.slug}/ajax/chapters/`,
           method: "POST",
           headers: {
             "content-type": "application/x-www-form-urlencoded",
@@ -239,7 +240,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
 
       case 2:
         requestConfig = {
-          url: `${this.domain}/temp_dirpath/${mangaId.slug}`,
+          url: `${this.domain}/temp_dirpath/${mangaId.slug}/`,
           method: "POST",
           headers: {
             "content-type": "application/x-www-form-urlencoded",
@@ -249,7 +250,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
 
       case 3:
         requestConfig = {
-          url: `${this.domain}/temp_dirpath/${mangaId.slug}`,
+          url: `${this.domain}/temp_dirpath/${mangaId.slug}/`,
           method: "GET",
           headers: {
             "content-type": "application/x-www-form-urlencoded",
@@ -263,7 +264,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
 
     const [_response, buffer] = await Application.scheduleRequest(requestConfig);
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     return this.parser.parseChapterList($, sourceManga, this);
   }
@@ -275,7 +276,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
     const url = new URL(this.domain).addPathComponent("temp_dirpath");
     url.addPathComponent(mangaId.slug);
 
-    url.addPathComponent(chapterId);
+    url.addPathComponent(`${chapterId}/`);
 
     if (this.useListParameter) {
       url.setQueryItem("style", "list");
@@ -286,7 +287,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     if (this.hasProtectedChapters) {
       return this.parser.parseProtectedChapterDetails(
@@ -351,11 +352,14 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
     }
 
     const [_response, buffer] = await Application.scheduleRequest({
-      url: `${this.domain}/temp_dirpath/page/${page}/${param}`,
+      url:
+        page > 1
+          ? `${this.domain}/temp_dirpath/page/${page}/${param}`
+          : `${this.domain}/temp_dirpath/${param}`,
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     const items = await this.parser.parseDiscoverSections($, section, this);
 
@@ -373,7 +377,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     const tagSections = await this.parser.parseSearchTags($);
     const genreTags = tagSections.find((x) => x.id === "genres") as TagSection;
@@ -402,7 +406,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       return { items: [], metadata: undefined }; // Madara doesn't support last page checking, will return 404 on website!
     }
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     const results = await this.parser.parseSearchResults($, this);
 
@@ -470,6 +474,8 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
 
   async getPostAndSlug(mangaId: string) {
     const isPostId = !isNaN(Number(mangaId));
+    // The admin-ajax chapter endpoint needs the post ID even when manga IDs are slugs.
+    const needsPostId = getUsePostIds(this.usePostIds) || this.chapterEndpoint === 0;
     let postId: number = 0;
     let slug: string = "";
 
@@ -477,9 +483,8 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       // mangaId is already the slug
       slug = mangaId.toString();
 
-      // Only resolve the postId when this source actually uses post IDs
-      if (getUsePostIds(this.usePostIds)) {
-        postId = Application.getState(slug) as number;
+      if (needsPostId) {
+        postId = Number(Application.getState(slug));
         if (!postId) {
           postId = await this.convertSlugToPostId(slug);
         }
@@ -499,8 +504,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       postId = postIdInput;
     }
 
-    // We only need to store these if we actually care about them
-    if (getUsePostIds(this.usePostIds)) {
+    if (needsPostId) {
       Application.setState(postId.toString(), slug);
       Application.setState(slug, postId.toString());
     }
@@ -517,7 +521,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     let parseURL: string;
     // Step 1: Try to get slug from og-url
@@ -564,7 +568,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     // Step 1: Try to get postId from shortlink
     const postId_1 = $('link[rel="shortlink"]')?.attr("href")?.split("/?p=")[1];
@@ -614,7 +618,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
       method: "GET",
     });
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const $ = cheerio.load(decodeHtml(buffer));
 
     const path = this.parser.parseDirectoryPath($, this); // Returns "manga" (default) if unable to parse
 
