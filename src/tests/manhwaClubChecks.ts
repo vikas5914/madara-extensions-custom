@@ -8,6 +8,7 @@ export function registerManhwaClubChecks(
   suite: TestSuite,
   source: MadaraGeneric,
   mangaId: string,
+  legacyPostId: string,
   wantRaw: boolean,
 ): void {
   suite.test("manual decoder matches TextDecoder on a live page", async () => {
@@ -33,6 +34,17 @@ export function registerManhwaClubChecks(
 
     const details = await source.getChapterDetails(chapters[0]!);
     expect(details).to.have.property("pages");
+    expect((details as { pages: string[] }).pages.length).to.be.greaterThan(1);
+  });
+
+  suite.test("a post ID saved before slug IDs still loads the same manga", async () => {
+    const bySlug = await source.getMangaDetails(mangaId);
+    const byPostId = await source.getMangaDetails(legacyPostId);
+    expect(byPostId.mangaInfo.primaryTitle).to.equal(bySlug.mangaInfo.primaryTitle);
+
+    const chapters = await source.getChapters(byPostId);
+    expect(chapters).to.have.length.above(0);
+    const details = await source.getChapterDetails(chapters[0]!);
     expect((details as { pages: string[] }).pages.length).to.be.greaterThan(1);
   });
 

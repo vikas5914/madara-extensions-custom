@@ -11,7 +11,7 @@ export async function runTests(logger: TestLogger) {
   const suite = new TestSuite("ManhwaClubRaw tests", logger);
   registerDefaultTests(suite, ManhwaClubRaw, sourceInfo);
 
-  registerManhwaClubChecks(suite, ManhwaClubRaw, "aunts-husband", true);
+  registerManhwaClubChecks(suite, ManhwaClubRaw, "aunts-husband", "2720", true);
 
   await suite.run();
 }

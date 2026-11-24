@@ -16,7 +16,7 @@ export async function runTests(logger: TestLogger) {
     },
   });
 
-  registerManhwaClubChecks(suite, ManhwaClubEN, "the-teachers-efforts-01", false);
+  registerManhwaClubChecks(suite, ManhwaClubEN, "the-teachers-efforts-01", "919", false);
 
   await suite.run();
 }
