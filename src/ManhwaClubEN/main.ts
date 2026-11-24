@@ -24,6 +24,7 @@ class ManhwaClubENExtension extends MadaraGeneric {
       language: pbconfig.language,
       usePostIds: false,
       chapterEndpoint: 0,
+      discoverFirstPageWithoutNumber: true,
     });
   }
 

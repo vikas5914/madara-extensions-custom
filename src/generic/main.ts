@@ -40,6 +40,7 @@ export interface GenericParams {
   language: string;
   usePostIds: boolean;
   searchPagePathName?: string;
+  discoverFirstPageWithoutNumber?: boolean;
   searchMangaSelector?: string;
   searchRatingSelector?: string;
   hasProtectedChapters?: boolean;
@@ -90,6 +91,12 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
    * Eg. for https://mangabob.com/page/2/?s&post_type=wp-manga it would be 'page'
    */
   readonly searchPagePathName: string;
+
+  /**
+   * Request the first discover page as /manga/ instead of /manga/page/1/.
+   * Needed by sites that serve junk instead of the /page/1/ redirect, such as manhwaclub.net.
+   */
+  readonly discoverFirstPageWithoutNumber: boolean;
 
   /**
    * Different Madara sources might have a slightly different selector which is required to parse out
@@ -165,6 +172,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
     this.language = params.language ?? "🇬🇧";
     this.usePostIds = params.usePostIds ?? true;
     this.searchPagePathName = params.searchPagePathName ?? "page";
+    this.discoverFirstPageWithoutNumber = params.discoverFirstPageWithoutNumber ?? false;
     this.searchMangaSelector = params.searchMangaSelector ?? "div.c-tabs-item__content";
     this.searchRatingSelector = params.searchRatingSelector ?? "span.score";
     this.hasProtectedChapters = params.hasProtectedChapters ?? false;
@@ -353,7 +361,7 @@ export abstract class MadaraGeneric implements ExtensionImpl<typeof basePbConfig
 
     const [_response, buffer] = await Application.scheduleRequest({
       url:
-        page > 1
+        page > 1 || !this.discoverFirstPageWithoutNumber
           ? `${this.domain}/temp_dirpath/page/${page}/${param}`
           : `${this.domain}/temp_dirpath/${param}`,
       method: "GET",
