@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Inkdex */
 
 // Application.arrayBufferToUTF8String returns no string on iOS when the body has invalid
 // UTF-8 (manhwaclub.net injects GBK text into every page), which makes cheerio.load throw.
