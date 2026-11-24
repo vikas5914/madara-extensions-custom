@@ -1,18 +1,18 @@
 {
-  "buildTime": "2026-07-11T01:34:29.484Z",
+  "buildTime": "2026-11-24T22:04:51.258Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.92",
     "types": "1.0.0-alpha.92"
   },
   "repository": {
-    "name": "Madara Extensions (0.9)",
-    "description": "Paperback extensions for websites which use the generic Madara theme. Maintained by Inkdex."
+    "name": "Madara Extensions Custom (0.9)",
+    "description": "Paperback extensions for websites which use the generic Madara theme. Custom fork maintained by Vikas Kapadiya."
   },
   "sources": [
     {
-      "name": "ManhwaClub",
+      "name": "ManhwaClub (EN)",
       "description": "Extension that pulls content from manhwaclub.net (non-RAW chapters).",
-      "version": "1.0.0-alpha.2",
+      "version": "1.0.0-alpha.4",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "ADULT",
@@ -26,17 +26,17 @@
       "badges": [],
       "developers": [
         {
-          "name": "Inkdex",
-          "website": "https://inkdex.github.io",
-          "github": "https://github.com/inkdex"
+          "name": "Vikas Kapadiya",
+          "website": "https://vikas5914.github.io/madara-extensions-custom",
+          "github": "https://github.com/vikas5914"
         }
       ],
-      "id": "ManhwaClub"
+      "id": "ManhwaClubEN"
     },
     {
-      "name": "ManhwaClubRAW",
+      "name": "ManhwaClub (RAW)",
       "description": "Extension that pulls only RAW chapters from manhwaclub.net.",
-      "version": "1.0.0-alpha.3",
+      "version": "1.0.0-alpha.5",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "ADULT",
@@ -50,9 +50,9 @@
       "badges": [],
       "developers": [
         {
-          "name": "Inkdex",
-          "website": "https://inkdex.github.io",
-          "github": "https://github.com/inkdex"
+          "name": "Vikas Kapadiya",
+          "website": "https://vikas5914.github.io/madara-extensions-custom",
+          "github": "https://github.com/vikas5914"
         }
       ],
       "id": "ManhwaClubRaw"
