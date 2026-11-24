@@ -1,5 +1,5 @@
 {
-  "buildTime": "2026-11-24T22:22:44.637Z",
+  "buildTime": "2026-11-24T22:30:13.730Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.92",
     "types": "1.0.0-alpha.92"
@@ -12,7 +12,7 @@
     {
       "name": "ManhwaClub (EN)",
       "description": "Extension that pulls content from manhwaclub.net (non-RAW chapters).",
-      "version": "1.0.0-alpha.5",
+      "version": "1.0.0-alpha.6",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "ADULT",
@@ -36,7 +36,7 @@
     {
       "name": "ManhwaClub (RAW)",
       "description": "Extension that pulls only RAW chapters from manhwaclub.net.",
-      "version": "1.0.0-alpha.6",
+      "version": "1.0.0-alpha.7",
       "icon": "icon.png",
       "language": "en",
       "contentRating": "ADULT",
