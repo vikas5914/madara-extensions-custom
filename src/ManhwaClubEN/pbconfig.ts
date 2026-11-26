@@ -10,7 +10,7 @@ let pbConfig = basePbConfig;
 
 pbConfig.name = "ManhwaClub (EN)";
 pbConfig.description = "Extension that pulls content from manhwaclub.net (non-RAW chapters).";
-pbConfig.version = customVersion({ increasePrerelease: -9 });
+pbConfig.version = customVersion({ increasePrerelease: -7});
 pbConfig.contentRating = ContentRating.ADULT;
 pbConfig.developers = DEVELOPERS;
 
